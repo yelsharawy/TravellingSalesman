@@ -8,7 +8,7 @@ public class Solver {
     
     public static final int MAX_SIZE = 9;
     
-    private int[][] costs;
+    private double[][] costs;
     private int size;
     /* Works no matter what order the input is in,
      * or if there are blank/invalid lines,
@@ -16,12 +16,12 @@ public class Solver {
      */
     public void parseCosts(Scanner scanner) {
         HashMap<String, Integer> ids = new HashMap<String, Integer>();
-        Pattern pattern = Pattern.compile("^(\\w+) to (\\w+) = (\\d+)$");
+        Pattern pattern = Pattern.compile("^(\\w+) to (\\w+) = (.+)$");
         
         AtomicInteger cityCount = new AtomicInteger();
         Function<String, Integer> adder = (s) -> cityCount.getAndIncrement();
         
-        costs = new int[MAX_SIZE][MAX_SIZE];
+        costs = new double[MAX_SIZE][MAX_SIZE];
         // an array of maximum size is created, instead of the actual size
         // a second pass or other data structure would be necessary otherwise
         for (int i = 0; i < costs.length; i++) {
@@ -33,13 +33,18 @@ public class Solver {
             String line = scanner.nextLine();
             Matcher matcher = pattern.matcher(line);
             if (matcher.find()) {
+                double cost = Double.POSITIVE_INFINITY;
+                try {
+                    cost = Double.parseDouble(matcher.group(3));
+                } catch (NumberFormatException e) {
+                    continue;
+                }
                 String city1 = matcher.group(1);
                 String city2 = matcher.group(2);
                 
                 int id1 = ids.computeIfAbsent(city1, adder);
                 int id2 = ids.computeIfAbsent(city2, adder);
                 
-                int cost = Integer.parseInt(matcher.group(3));
                 costs[id1][id2] = costs[id2][id1] = cost;
             }
         }
@@ -47,13 +52,13 @@ public class Solver {
         size = cityCount.get();
     }
     
-    private int bruteForceHelper(int current, HashSet<Integer> unvisited) {
+    private double bruteForceHelper(int current, HashSet<Integer> unvisited) {
         if (unvisited.size() == 1) return 0;
         
         unvisited.remove(current);
         List<Integer> toVisit = List.copyOf(unvisited);
         
-        int min = Integer.MAX_VALUE;
+        double min = Integer.MAX_VALUE;
         for (int city : toVisit) {
             min = Math.min(min, costs[current][city] + bruteForceHelper(city, unvisited));
         }
@@ -62,11 +67,11 @@ public class Solver {
         return min;
     }
     
-    public int bruteForce() {
+    public double bruteForce() {
         HashSet<Integer> unvisited = new HashSet<Integer>();
         for (int i = 0; i < size; i++) unvisited.add(i);
         
-        int min = Integer.MAX_VALUE;
+        double min = Integer.MAX_VALUE;
         for (int i = 0; i < size; i++) {
             min = Math.min(min, bruteForceHelper(i, unvisited));
         }
